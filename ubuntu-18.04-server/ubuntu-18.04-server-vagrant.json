@@ -1,0 +1,180 @@
+{
+    "variables": {
+        "username": "ubuntu",
+        "password": "ubuntu",
+        "hostname": "ubuntu",
+        "display_name": "Ubuntu 18.04 Server",
+        "vm_name": "ubuntu-18.04-server",
+        "disk_size": "20480",
+        "memory": "1024",
+        "cpus": "1",
+        "iso_url": "../iso/ubuntu-18.04.4-server-amd64.iso",
+        "iso_checksum": "e2ecdace33c939527cbc9e8d23576381c493b071107207d2040af72595f8990b",
+        "iso_checksum_type": "sha256",
+        "headless": "false",
+        "http_directory": ".",
+        "preseed_path": "ubuntu-18.04-server-preseed.cfg",
+        "output_dir": "../output"
+    },
+
+    "builders": [
+        {
+            "boot_command": [
+                "<esc><wait>",
+                "<esc><wait>",
+                "<enter><wait>",
+                "/install/vmlinuz<wait>",
+                " auto<wait>",
+                " console-setup/ask_detect=false<wait>",
+                " console-setup/layoutcode=us<wait>",
+                " console-setup/modelcode=pc105<wait>",
+                " debconf/frontend=noninteractive<wait>",
+                " debian-installer=en_US.UTF-8<wait>",
+                " fb=false<wait>",
+                " initrd=/install/initrd.gz<wait>",
+                " kbd-chooser/method=us<wait>",
+                " keyboard-configuration/layout=USA<wait>",
+                " keyboard-configuration/variant=USA<wait>",
+                " locale=en_US.UTF-8<wait>",
+                " netcfg/get_domain=vm<wait>",
+                " netcfg/get_hostname={{user `hostname`}}<wait>",
+                " grub-installer/bootdev=/dev/sda<wait>",
+                " noapic<wait>",
+                " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed_path`}}<wait>",
+                " -- <wait>",
+                "<enter><wait>"
+            ],
+            "boot_key_interval": "10ms",
+            "boot_wait": "5s",
+            "disk_size": "{{user `disk_size`}}",
+            "guest_os_type": "ubuntu-64",
+            "headless": "{{user `headless`}}",
+            "http_directory": "{{user `http_directory`}}",
+            "iso_checksum": "{{user `iso_checksum`}}",
+            "iso_checksum_type": "{{user `iso_checksum_type`}}",
+            "iso_url": "{{user `iso_url`}}",
+            "output_directory": "{{user `output_dir`}}/{{user `vm_name`}}/vmware/{{user `vm_name`}}.vmwarevm",
+            "shutdown_command": "echo '{{user `password`}}' | sudo -S shutdown -P now",
+            "ssh_password": "{{user `password`}}",
+            "ssh_username": "{{user `username`}}",
+            "ssh_timeout": "10000s",
+            "tools_upload_flavor": "linux",
+            "type": "vmware-iso",
+            "vm_name": "{{user `vm_name`}}",
+            "vmdk_name": "{{user `vm_name`}}",
+            "memory": "{{ user `memory` }}",
+            "cpus": "{{ user `cpus` }}",
+            "vmx_data": {
+                "cpuid.coresPerSocket": "1",
+                "ethernet0.pciSlotNumber": "32",
+                "displayname": "{{user `display_name`}}"
+            }
+        },
+        {
+            "boot_command": [
+                "<esc><wait>",
+                "<esc><wait>",
+                "<enter><wait>",
+                "/install/vmlinuz<wait>",
+                " auto<wait>",
+                " console-setup/ask_detect=false<wait>",
+                " console-setup/layoutcode=us<wait>",
+                " console-setup/modelcode=pc105<wait>",
+                " debconf/frontend=noninteractive<wait>",
+                " debian-installer=en_US.UTF-8<wait>",
+                " fb=false<wait>",
+                " initrd=/install/initrd.gz<wait>",
+                " kbd-chooser/method=us<wait>",
+                " keyboard-configuration/layout=USA<wait>",
+                " keyboard-configuration/variant=USA<wait>",
+                " locale=en_US.UTF-8<wait>",
+                " netcfg/get_domain=vm<wait>",
+                " netcfg/get_hostname={{user `hostname`}}<wait>",
+                " grub-installer/bootdev=/dev/sda<wait>",
+                " noapic<wait>",
+                " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed_path`}}<wait>",
+                " -- <wait>",
+                "<enter><wait>"
+            ],
+            "boot_wait": "5s",
+            "disk_size": "{{user `disk_size`}}",
+            "format": "ova",
+            "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+            "guest_os_type": "Ubuntu_64",
+            "hard_drive_interface": "sata",
+            "headless": "{{user `headless`}}",
+            "http_directory": "{{user `http_directory`}}",
+            "iso_checksum": "{{user `iso_checksum`}}",
+            "iso_checksum_type": "{{user `iso_checksum_type`}}",
+            "iso_url": "{{user `iso_url`}}",
+            "output_directory": "{{user `output_dir`}}/{{user `vm_name`}}/virtualbox",
+            "shutdown_command": "echo '{{user `password`}}' | sudo -S shutdown -P now",
+            "ssh_password": "{{user `password`}}",
+            "ssh_username": "{{user `username`}}",
+            "ssh_timeout": "10000s",
+            "type": "virtualbox-iso",
+            "memory": "{{ user `memory` }}",
+            "cpus": "{{ user `cpus` }}",
+            "vboxmanage": [
+                ["modifyvm", "{{.Name}}", "--name", "{{user `display_name`}}"],
+                ["modifyvm", "{{user `display_name`}}", "--ioapic", "on"],
+                ["modifyvm", "{{user `display_name`}}", "--pae", "on"]
+            ],
+            "virtualbox_version_file": ".vbox_version",
+            "vm_name": "{{user `display_name`}}"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "scripts": [
+                "../scripts/ubuntu/update.sh",
+                "../scripts/ubuntu/basic_packages.sh",
+                "../scripts/ubuntu/networking.sh"
+            ],
+            "execute_command": "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash -eux '{{.Path}}'",
+            "expect_disconnect": true
+        },
+        {
+            "type": "shell",
+            "script": "../scripts/vmware.sh",
+            "only": ["vmware-iso"],
+            "override": {
+                "vmware-iso": {
+                    "execute_command": "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash -eux '{{.Path}}'"
+                }
+            }
+        },
+        {
+            "type": "shell",
+            "script": "../scripts/virtualbox.sh",
+            "only": ["virtualbox-iso"],
+            "override": {
+                "virtualbox-iso": {
+                    "execute_command": "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash -eux '{{.Path}}'"
+                }
+            }
+        },
+        {
+            "type": "shell",
+            "script": "../scripts/vagrant.sh",
+            "execute_command": "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash -eux '{{.Path}}'"
+        },
+        {
+            "type": "shell",
+            "scripts": [
+                "../scripts/sshd.sh",
+                "../scripts/ubuntu/cleanup.sh",
+                "../scripts/minimize.sh"
+            ],
+            "execute_command": "echo '{{user `password`}}' | {{.Vars}} sudo -E -S bash -eux '{{.Path}}'",
+            "expect_disconnect": true
+        }
+    ],
+    "post-processors": [
+        {
+            "output": "{{user `output_dir`}}/{{user `vm_name`}}/box/{{user `display_name`}}.{{.Provider}}.box",
+            "type": "vagrant"
+        }
+    ]
+}
